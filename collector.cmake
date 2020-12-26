@@ -68,9 +68,9 @@ function(collect collection_name git_url version_tag dependent )
             CMAKE_ARGS          ${CL_ARGS} -DCMAKE_INSTALL_PREFIX=${COLLECTOR_CMAKE_INSTALL_PREFIX}
         )
         add_dependencies(${dependent} ${collection_name})#wait for the download/configure/build/install of collection
-        target_include_directories (${dependent} PRIVATE ${COLLECTOR_INSTALLS}/include )
-        target_link_directories (${dependent} PRIVATE ${COLLECTOR_INSTALLS}/lib)
-        
+        target_include_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/include )#add path off include folder installed by current collection to dependent executable/library
+        target_link_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/lib)#add path off lib folder installed by current collection to dependent executable/library
+
         #setting the path to the installed collecction, the folder containing includes and libs
         SET (${collection_name}_DIR "${COLLECTOR_INSTALLS}/${collection_name}" )
 
