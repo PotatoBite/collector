@@ -1,7 +1,6 @@
 #Collector depends on ExternalProject, is actually a convenience wrapper of it, with some utilities
 include(ExternalProject)
 
-# MUST be done before call to 'project'
 #getting global variables , like compiler, to pass it down to external projects
 get_cmake_property(vars CACHE_VARIABLES)
 message("\n") # this is for better understanding the output
@@ -68,8 +67,10 @@ function(collect collection_name git_url version_tag dependent )
             #INSTALL_DIR         ${COLLECTOR_CMAKE_INSTALL_PREFIX} #don't know what it is used for
             CMAKE_ARGS          ${CL_ARGS} -DCMAKE_INSTALL_PREFIX=${COLLECTOR_CMAKE_INSTALL_PREFIX}
         )
-        add_dependencies(${dependent} ${collection_name})#wait for the download of tuberosum_tools to build civ
-
+        add_dependencies(${dependent} ${collection_name})#wait for the download/configure/build/install of collection
+        target_include_directories (${dependent} PRIVATE ${COLLECTOR_INSTALLS}/include )
+        target_link_directories (${dependent} PRIVATE ${COLLECTOR_INSTALLS}/lib)
+        
         #setting the path to the installed collecction, the folder containing includes and libs
         SET (${collection_name}_DIR "${COLLECTOR_INSTALLS}/${collection_name}" )
 
