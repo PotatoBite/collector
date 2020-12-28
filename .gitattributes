@@ -1,0 +1,5 @@
+# Esteblece el comportamiento predeterminado, en caso de que las personas no tengan configurado core.autocrlf.
+* text=auto
+
+# Declara los archivos que siempre tendrán los finales de línea CRLF en el control.
+*.sln text eol=crlf
