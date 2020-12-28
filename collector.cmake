@@ -18,9 +18,12 @@ message("\n") # this is for better understanding the output
 set(FRESH_DOWNLOAD on CACHE BOOL "download a fresh copy of all dependencies")
 
 #set the path to downloaded collections and installed collections
-SET (COLLECTOR_DIR   ${PROJECT_SOURCE_DIR}/collected_deps)
-SET (COLLECTOR_INSTALLS   ${PROJECT_BINARY_DIR}/collected_installs)
-
+if(NOT DEFINED COLLECTOR_DIR )#checking if was provided by a parent project, ie: avoiding having duplicated collections
+    SET (COLLECTOR_DIR   ${PROJECT_SOURCE_DIR}/collected_deps)
+endif()
+if(NOT DEFINED COLLECTOR_INSTALLS )
+    SET (COLLECTOR_INSTALLS   ${PROJECT_BINARY_DIR}/collected_installs)
+endif()
 
 #Set variable for user choice of collections storage method
 set(COLLECTOR_COLLECT_TOGETHER on CACHE BOOL "if on, store installed dependencies on common folder,ie the root of \"COLLECTOR_INSTALLS\" folder. if off install each dependency on particular folder,ie \"COLLECTOR_INSTALLS/dependency\"") 
@@ -42,7 +45,57 @@ endfunction()
 
 
 #Function to setup external projects
-function(collect collection_name git_url version_tag dependent )
+function(collect git_url version_tag dependent )
+    if (FRESH_DOWNLOAD)
+        # Define the variable to enable DOWNLOAD step
+        set( COLLECTION_REPO GIT_REPOSITORY ${git_url})
+    endif()
+
+    #checking if the path to required headers/libs is given by command or sets it's own
+    if(COLLECTOR_COLLECT_TOGETHER)
+        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION} )
+    else()
+        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${collection_name} )
+    endif()
+
+    #here we are calculating a name for the downloaded dependency
+    string(REGEX MATCH "[^/]+$" temp ${git_url})#getting the name based on the url
+    set(collection_name _${temp})#adding _ to the collection name for compatibility with other cmake variables, like lib names when linking
+
+    string(CONCAT temp ${git_url} ${version_tag})# computing has based on url, and tag
+    string(SHA1 temp ${temp})
+    string(CONCAT collection_name_hash_appended ${collection_name} "-" ${temp})#computing final name of downloaded collection
+
+    if(NOT DEFINED ${collection_name}_DIR )
+        ExternalProject_Add( ${collection_name}
+            SOURCE_DIR          ${COLLECTOR_DIR}/${collection_name_hash_appended}
+            ${COLLECTION_REPO}
+            BINARY_DIR          ${PROJECT_BINARY_DIR}/${collection_name_hash_appended}
+            GIT_TAG             ${version_tag}
+            #CONFIGURE_COMMAND   ""
+            #BUILD_COMMAND       ""
+            #INSTALL_COMMAND     ""
+            #INSTALL_DIR         ${COLLECTOR_CMAKE_INSTALL_PREFIX} #don't know what it is used for
+            CMAKE_ARGS          ${CL_ARGS} -DCMAKE_INSTALL_PREFIX=${COLLECTOR_CMAKE_INSTALL_PREFIX} -DCOLLECTOR_DIR=${COLLECTOR_DIR} -DCOLLECTOR_INSTALLS=${COLLECTOR_INSTALLS}
+        )
+        add_dependencies(${dependent} ${collection_name})#wait for the download/configure/build/install of collection
+        target_include_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/include )#add path off include folder installed by current collection to dependent executable/library
+        target_link_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/lib)#add path off lib folder installed by current collection to dependent executable/library
+
+        #setting the path to the installed collecction, the folder containing includes and libs
+        SET (${collection_name}_DIR "${COLLECTOR_INSTALLS}/${collection_name}" )
+
+        #propagate ${collection_name}_DIR to calling scope, ie the main cmakelist
+        SET (${collection_name}_DIR ${${collection_name}_DIR} PARENT_SCOPE )
+
+    else()
+        message(STATUS "${collection_name}_DIR is DEFINED by something else")
+    endif()
+
+endfunction()
+
+#Function to setup external projects
+function(named_collect collection_name git_url version_tag dependent )
     if (FRESH_DOWNLOAD)
         # Define the variable to enable DOWNLOAD step
         set( COLLECTION_REPO GIT_REPOSITORY ${git_url})
