@@ -190,10 +190,10 @@ The naming of the variable is: (`"_"`) + (the last string after `/` in the url) 
 
 This module was conceived for internal use due to the lack of a: light, offline friendly, powerful, cmake friendly, not biased and standardized dependency manager for c/c++, and is in development, for more mature tools please refer to any of this awesome, but not suitable for us, tools:
 
-- vcpkg
-- hunter
-- build2 (toolchain)
-- conan
+- [vcpkg](https://github.com/Microsoft/vcpkg)
+- [hunter](https://github.com/cpp-pm/hunter)
+- [build2 (toolchain)](https://www.build2.org/)
+- [conan](https://conan.io/)
 
 
 
