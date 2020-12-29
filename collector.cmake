@@ -83,7 +83,7 @@ function(collect git_url version_tag dependent )
         target_link_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/lib)#add path off lib folder installed by current collection to dependent executable/library
 
         #setting the path to the installed collecction, the folder containing includes and libs
-        SET (${collection_name}_DIR "${COLLECTOR_INSTALLS}/${collection_name}" )
+        SET (${collection_name}_DIR "${COLLECTOR_CMAKE_INSTALL_PREFIX}" )
 
         #propagate ${collection_name}_DIR to calling scope, ie the main cmakelist
         SET (${collection_name}_DIR ${${collection_name}_DIR} PARENT_SCOPE )
