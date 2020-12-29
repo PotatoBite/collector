@@ -95,6 +95,7 @@ function(collect git_url version_tag dependent )
 endfunction()
 
 #Function to setup external projects
+#WARNING THIS FUNCTION IS NOT MANTAINED
 function(named_collect collection_name git_url version_tag dependent )
     if (FRESH_DOWNLOAD)
         # Define the variable to enable DOWNLOAD step
