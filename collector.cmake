@@ -51,13 +51,6 @@ function(collect git_url version_tag dependent )
         set( COLLECTION_REPO GIT_REPOSITORY ${git_url})
     endif()
 
-    #checking if the path to required headers/libs is given by command or sets it's own
-    if(COLLECTOR_COLLECT_TOGETHER)
-        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION} )
-    else()
-        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${collection_name} )
-    endif()
-
     #here we are calculating a name for the downloaded dependency
     string(REGEX MATCH "[^/]+$" temp ${git_url})#getting the name based on the url
     set(collection_name _${temp})#adding _ to the collection name for compatibility with other cmake variables, like lib names when linking
@@ -65,6 +58,13 @@ function(collect git_url version_tag dependent )
     string(CONCAT temp ${git_url} ${version_tag})# computing has based on url, and tag
     string(SHA1 temp ${temp})
     string(CONCAT collection_name_hash_appended ${collection_name} "-" ${temp})#computing final name of downloaded collection
+
+    #checking if the path to required headers/libs is given by command or sets it's own
+    if(COLLECTOR_COLLECT_TOGETHER)
+        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION} )
+    else()
+        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${collection_name} )
+    endif()
 
     if(NOT DEFINED ${collection_name}_DIR )
         ExternalProject_Add( ${collection_name}
