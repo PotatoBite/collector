@@ -1,2 +1,0 @@
--not compiling dependencies in release mode, i think
--need to implement forwarding dependencies parameters
