@@ -13,16 +13,24 @@ foreach(var ${vars})
 endforeach()
 message("\n") # this is for better understanding the output
 
-#Set variable to let the user choose if use it offline, under is own risk or check online for dependencies.
+#Set variable to let the user choose if redownload all collections, even if they exist in cache, when doing a first time configuration. 
+#If on, and do a really clean reconfigure of project(first time configuration), while offline, it will delete cache files and try to clone collection causing an error. 
+#We recommend not turning it on unless needed, just using diferent tag vesions of collections ius enough for basic versioning, and cache 
 #Actually it does not take into account if the downloaded folder is broken or not, i think.
-set(FRESH_DOWNLOAD on CACHE BOOL "download a fresh copy of all dependencies")
+set(FRESH_DOWNLOAD off CACHE BOOL "Tries to download a fresh copy of all dependencies")
+
+file(TO_CMAKE_PATH $ENV{COLLECTOR_CACHE_ROOT} COLLECTOR_CACHE_ROOT)#convert the path to CMake's internal format before handling it
 
 #set the path to downloaded collections and installed collections
 if(NOT DEFINED COLLECTOR_DIR )#checking if was provided by a parent project, ie: avoiding having duplicated collections
-    SET (COLLECTOR_DIR   ${PROJECT_SOURCE_DIR}/collected_deps)
+    if(DEFINED COLLECTOR_CACHE_ROOT)#checking if was provided by a environment variable, ie: caching all collections in one place, and avoid re cloning
+        set(COLLECTOR_DIR "${COLLECTOR_CACHE_ROOT}" CACHE INTERNAL "Copied from environment variable")
+    else()
+        set(COLLECTOR_DIR "${PROJECT_SOURCE_DIR}/collected_deps" CACHE INTERNAL "Defined by current project")
+    endif()
 endif()
 if(NOT DEFINED COLLECTOR_INSTALLS )
-    SET (COLLECTOR_INSTALLS   ${PROJECT_BINARY_DIR}/collected_installs)
+    set (COLLECTOR_INSTALLS   ${PROJECT_SOURCE_DIR}/collections)
 endif()
 
 #Set variable for user choice of collections storage method
@@ -46,11 +54,6 @@ endfunction()
 
 #Function to setup external projects
 function(collect git_url version_tag dependent )
-    if (FRESH_DOWNLOAD)
-        # Define the variable to enable DOWNLOAD step
-        set( COLLECTION_REPO GIT_REPOSITORY ${git_url})
-    endif()
-
     #here we are calculating a name for the downloaded dependency
     string(REGEX MATCH "[^/]+$" temp ${git_url})#getting the name based on the url
     set(collection_name _${temp})#adding _ to the collection name for compatibility with other cmake variables, like lib names when linking
@@ -64,6 +67,15 @@ function(collect git_url version_tag dependent )
         set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION} )
     else()
         set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${collection_name} )
+    endif()
+
+    #checking if the collection is already downloaded
+    if(EXISTS "${COLLECTOR_DIR}/${collection_name_hash_appended}/CMakeLists.txt" AND NOT FRESH_DOWNLOAD)
+        message("Using cache version of ${collection_name} in folder:  ${collection_name_hash_appended} ")
+    else()
+        # Define the variable to enable DOWNLOAD step
+        set( COLLECTION_REPO GIT_REPOSITORY ${git_url})
+        message("The collection ${collection_name} will be downloaded to folder:  ${collection_name_hash_appended} ")
     endif()
 
     if(NOT DEFINED ${collection_name}_DIR )
