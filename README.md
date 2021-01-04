@@ -1,6 +1,5 @@
 # collector
 
-* TOC
 {:toc}
 
 
