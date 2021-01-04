@@ -1,6 +1,7 @@
 # collector
 
-[toc]
+* TOC
+{:toc}
 
 
 Mini dependency manager for cmake based projects, is currently just a commodity wrapper( with some automation) of cmake's `ExternalProject_Add`, but this will change in the future.
