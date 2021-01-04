@@ -1,4 +1,8 @@
 # collector
+
+[toc]
+
+
 Mini dependency manager for cmake based projects, is currently just a commodity wrapper( with some automation) of cmake's `ExternalProject_Add`, but this will change in the future.
 
 For total compatibility with all projects, the collections(the dependencies) are assumed to be cmake configurable, buildable, and installable in a folder structure like this:
@@ -29,13 +33,13 @@ For total compatibility with all projects, the collections(the dependencies) are
 
 ### Install
 
-You can just include the file `collector.cmake`, but we strongly recommend using it as a submodule.
+You can just include the file `collector.cmake` in your project, but we strongly recommend using it as a submodule.
 
 ```bash
 git submodule add https://github.com/PotatoBite/collector
 ```
 
-Collector right now depends on `ExternalProject`, so be sure your cmake supports it. That aside, in your project's `CMakeLists.txt`, you need to include the `collector.cmake` AFTER the `project()` call:
+Collector right now depends on `ExternalProject`, so be sure your cmake supports it. That aside, in your project's `CMakeLists.txt`, you only need to include the `collector.cmake` AFTER the `project()` call:
 
 ```cmake
 cmake_minimum_required(VERSION 3.0.0)
@@ -55,7 +59,7 @@ The core of collector is the `collect()` function, it does configure all things 
 collect( <git_url> <version_tag> <dependent> )
 ```
 
-It accepts the url of the git repository from it will clone the desired collection, a tag name, that tells which commit will be used, and the `dependent`, which is the target that will depend on the collection(Of course because there is no way of knowing what target cmake is working on, it must be specified this way, resulting in the call must to be done after `add_executable()` or `add_library()`), for example:
+It accepts the url of a git repository from where it will clone the desired collection, a tag name, that tells which commit will be used, and the `dependent`, which is the target that will depend on the collection(Of course because there is no way of knowing what target cmake is working on, it must be specified this way, resulting in the call must to be done after `add_executable()` or `add_library()`), for example:
 
 ```cmake
 add_executable(myapp main.cpp)
@@ -63,7 +67,7 @@ add_executable(myapp main.cpp)
 collect( "https://github.com/PotatoBite/xgetopt" "v1.0.0" myapp)
 ```
 
-Also, collector automatically adds the folders `include` and `lib` of each installed collection to the `include_directories ` and `link_directories`, of selected target, making a very clean `CMakeLists.txt`, and easy way of using cmake and dependencies, for example, this is a fully working cmake project:
+Also, collector automatically adds the folders `include` and `lib` of each installed collection to the `include_directories ` and `link_directories` of selected target, making a very clean `CMakeLists.txt`, and easy way of using cmake and dependencies, for example, this is a fully working cmake project:
 
 ```cmake
 cmake_minimum_required(VERSION 3.0.0)
@@ -80,8 +84,8 @@ set (CMAKE_CXX_STANDARD 17)
 
 add_executable(myapp main.cpp)
 
-collect( "https://github.com/open-source-parsers/jsoncpp" "1.9.4" civ)
-collect( "https://github.com/PotatoBite/xgetopt" "v1.0.0" civ)
+collect( "https://github.com/open-source-parsers/jsoncpp" "1.9.4" myapp)
+collect( "https://github.com/PotatoBite/xgetopt" "v1.0.0" myapp)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
@@ -93,7 +97,13 @@ target_link_libraries (myapp PRIVATE jsoncpp_static xgetopt )
 install(TARGETS myapp DESTINATION "bin")
 ```
 
+### Cache
 
+By default collector store the downloaded collections in the folder pointed by `COLLECTOR_DIR`, this is a cache variable, so can be set by  set by cmake-gui, passing its value by command, or directly on code.(refer to [FRESH_DOWNLOAD](#FRESH_DOWNLOAD) for examples).
+
+If `COLLECTOR_DIR` variable is not defined manually, collector will use an environment variable(`COLLECTOR_CACHE_ROOT`) , which is the recommended way, cause is storing global cache of collections. 
+
+If none of the above options, collector fallbacks to create a directory(`collected_deps`) on project root directory(the cmake variable `PROJECT_SOURCE_DIR`).
 
 
 
@@ -101,7 +111,7 @@ install(TARGETS myapp DESTINATION "bin")
 
 ### Compiler selection and options forwarding
 
-By default collector forwards the selected kit of your project to the collections, meaning all will be compiled with the same  kit and will be consistent. Currently there is no interface to communicate to collector and tune compiler kit of each collection individually(and probably is a bad idea in most cases), but will be soon.
+By default collector forwards the selected kit of your project to the collections, meaning all will be compiled with the same  kit and will be consistent. Currently there is no interface to communicate to collector and tune compiler kit for each collection individually(and probably is a bad idea in most cases), but will be soon.
 
 In fact collector forwards to collections all cache variables declared before it, like:
 
@@ -123,19 +133,24 @@ COLLECTOR_INSTALLS			#path to installed collections(after compiled) folder
 
 ### FRESH_DOWNLOAD
 
-This variable is accessible for cache and it's `on` by default. It can be set by cmake-gui, or passing its value by command:
+This variable is accessible from cmake's cache and it's `off` by default. It can be set by cmake-gui, passing its value by command, or directly on code :
 
-```bash
-cmake -B build/ -DFRESH_DOWNLOAD=off
-```
+- command line:
 
- Or directly on code, although this is just for testing purposes, because is overwriting the real cache variable:
+  ```bash
+  cmake -B build/ -DFRESH_DOWNLOAD=off
+  ```
 
-```cmake
-#set(FRESH_DOWNLOAD off)#this is for compiling locally, but is not recommended, cause is tampering the behavior of the cache variable with the same name
-```
+- CMakeLists.txt:
 
-When this variable is `off`, if you have the collections previously downloaded to the folder `COLLECTOR_DIR`, the build process will go smoothly, even if offline, but if there is missing collections, it will raise an error.
+  ```cmake
+  #set(FRESH_DOWNLOAD on)#Not recommended
+  ```
+
+Although this is just for rare cases, because is tampering the real cache variable with same name, and overriding the custom collector behavior for caching collections :
+
+- `on`: collector will try to download all collections even if they are in cache(does not triggers a download step if the project was previously configured and builded, if not, it will erase and re-download each collection), 
+- `off`: `default`, if you have the collections previously downloaded to the folder `COLLECTOR_DIR`(in cache), the build process will go smoothly, even if offline, but if there is missing collections, it will try to download.
 
 ### COLLECTOR_COLLECT_TOGETHER 
 
@@ -175,16 +190,14 @@ It only affects the installation method of the collections, meaning all collecti
 for the case of `collect_apart`, you can also get the path to installation folder of each collection by the exported variables, like :
 
 ```cmake
-collect( "https://github.com/PotatoBite/xgetopt" "v1.0.0" civ)
+collect( "https://github.com/PotatoBite/xgetopt" "v1.0.0" myapp)
 
-message("path to collection xgetopt= ${_xgetopt_DIR}")
+message( "path to collection xgetopt= ${_xgetopt_DIR}")
 ```
 
-You can also get it when `collect_together` but all will be the same.
+You can also get it when `collect_together` but all variables will point to the same path.
 
 The naming of the variable is: (`"_"`) + (the last string after `/` in the url) + (`"_DIR"`).
-
-## 
 
 ## Future
 

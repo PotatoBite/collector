@@ -19,12 +19,12 @@ message("\n") # this is for better understanding the output
 #Actually it does not take into account if the downloaded folder is broken or not, i think.
 set(FRESH_DOWNLOAD off CACHE BOOL "Tries to download a fresh copy of all dependencies")
 
-file(TO_CMAKE_PATH $ENV{COLLECTOR_CACHE_ROOT} COLLECTOR_CACHE_ROOT)#convert the path to CMake's internal format before handling it
-
 #set the path to downloaded collections and installed collections
 if(NOT DEFINED COLLECTOR_DIR )#checking if was provided by a parent project, ie: avoiding having duplicated collections
-    if(DEFINED COLLECTOR_CACHE_ROOT)#checking if was provided by a environment variable, ie: caching all collections in one place, and avoid re cloning
+    if(DEFINED ENV{COLLECTOR_CACHE_ROOT})#checking if was provided by a environment variable, ie: caching all collections in one place, and avoid re cloning
+        file(TO_CMAKE_PATH $ENV{COLLECTOR_CACHE_ROOT} COLLECTOR_CACHE_ROOT)#convert the path to CMake's internal format before handling it    
         set(COLLECTOR_DIR "${COLLECTOR_CACHE_ROOT}" CACHE INTERNAL "Copied from environment variable")
+        message("\nThe path provided by the environment variable COLLECTOR_CACHE_ROOT, will be used for root path of downloaded collections: $ENV{COLLECTOR_CACHE_ROOT}\n")
     else()
         set(COLLECTOR_DIR "${PROJECT_SOURCE_DIR}/collected_deps" CACHE INTERNAL "Defined by current project")
     endif()
