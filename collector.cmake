@@ -82,7 +82,7 @@ function(collect git_url version_tag dependent )
         ExternalProject_Add( ${collection_name}
             SOURCE_DIR          ${COLLECTOR_DIR}/${collection_name_hash_appended}
             ${COLLECTION_REPO}
-            BINARY_DIR          ${PROJECT_BINARY_DIR}/${collection_name_hash_appended}
+            BINARY_DIR          ${COLLECTOR_DIR}/temp_workbench/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${collection_name_hash_appended}
             GIT_TAG             ${version_tag}
             #CONFIGURE_COMMAND   ""
             #BUILD_COMMAND       ""
