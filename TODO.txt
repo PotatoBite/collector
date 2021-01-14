@@ -1,2 +1,3 @@
 -check if the use of `collect_together()` and `collect_apart()` tampers the previously set COLLECTOR_COLLECT_TOGETHER.
 -set the path to compiled collections(in temp_workbench) depend in the templating used(unix, vs, etc)
+-there is one bug, if the collections folder of project is deleted, the compilation cant find some collections, couse does not installs some of them
