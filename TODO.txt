@@ -1,1 +1,5 @@
 -check if the use of `collect_together()` and `collect_apart()` tampers the previously set COLLECTOR_COLLECT_TOGETHER.
+-set the path to compiled collections(in temp_workbench) depend in the templating used(unix, vs, etc)
+-add ability to collect(), for collect collections from local storage
+-separate the collections installation, etc, from the main process of cmake(ie: like yarn install, yarn build)
+-make a list of collector ready projects, TESTED only
