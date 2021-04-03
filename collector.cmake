@@ -28,6 +28,8 @@ if(NOT DEFINED COLLECTOR_DIR )#checking if was provided by a parent project, ie:
     else()
         set(COLLECTOR_DIR "${PROJECT_SOURCE_DIR}/collected_deps" CACHE INTERNAL "Defined by current project")
     endif()
+else()
+    message(STATUS "COLLECTOR_DIR is DEFINED by something else(either parent project, or directly to cmake) to: ${COLLECTOR_DIR}")
 endif()
 if(NOT DEFINED COLLECTOR_INSTALLS )
     set (COLLECTOR_INSTALLS   ${PROJECT_SOURCE_DIR}/collections)
@@ -53,7 +55,12 @@ endfunction()
 
 
 #Function to setup external projects
-function(collect git_url version_tag dependent )
+function(collect git_url version_tag dependent)
+    
+    #installs the collection to build folder of dependant, for development use mainly
+    set(oneValueArgs RETURN_TARGET)
+    cmake_parse_arguments(PARSE_ARGV 3 collection "${options}" "${oneValueArgs}" "${multiValueArgs}" )
+
     #here we are calculating a name for the downloaded dependency
     string(REGEX MATCH "[^/]+$" temp ${git_url})#getting the name based on the url
     set(collection_name _${temp})#adding _ to the collection name for compatibility with other cmake variables, like lib names when linking
@@ -67,6 +74,16 @@ function(collect git_url version_tag dependent )
         set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION} )
     else()
         set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${collection_name} )
+    endif()
+
+    #installs the collection to build folder of dependant, for development use mainly
+    #need to set this as an extra path to install to, not override the custom path used for cache storage
+    if(collection_RETURN_TARGET)
+        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR} )
+        #install(TARGETS
+        #    ${collection_name}
+        #    DESTINATION ${PROJECT_BINARY_DIR} #el del parent_scope
+        #)
     endif()
 
     #checking if the collection is already downloaded
