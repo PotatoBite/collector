@@ -3,3 +3,4 @@
 -add ability to collect(), for collect collections from local storage
 -separate the collections installation, etc, from the main process of cmake(ie: like yarn install, yarn build)
 -make a list of collector ready projects, TESTED only
+-when changed some version of collection to download, if was previously compiled with, the build does not trigger the download step cause the cache thinks that target is already downloaded, so starts only an update step 

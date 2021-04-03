@@ -91,54 +91,11 @@ function(collect git_url version_tag dependent )
             CMAKE_ARGS          ${CL_ARGS} -DCMAKE_INSTALL_PREFIX=${COLLECTOR_CMAKE_INSTALL_PREFIX} -DCOLLECTOR_DIR=${COLLECTOR_DIR} -DCOLLECTOR_INSTALLS=${COLLECTOR_INSTALLS}
         )
         add_dependencies(${dependent} ${collection_name})#wait for the download/configure/build/install of collection
-        target_include_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/include )#add path off include folder installed by current collection to dependent executable/library
+        target_include_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/include )#add path of include folder installed by current collection to dependent executable/library
         target_link_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/lib)#add path off lib folder installed by current collection to dependent executable/library
 
         #setting the path to the installed collecction, the folder containing includes and libs
         SET (${collection_name}_DIR "${COLLECTOR_CMAKE_INSTALL_PREFIX}" )
-
-        #propagate ${collection_name}_DIR to calling scope, ie the main cmakelist
-        SET (${collection_name}_DIR ${${collection_name}_DIR} PARENT_SCOPE )
-
-    else()
-        message(STATUS "${collection_name}_DIR is DEFINED by something else")
-    endif()
-
-endfunction()
-
-#Function to setup external projects
-#WARNING THIS FUNCTION IS NOT MANTAINED
-function(named_collect collection_name git_url version_tag dependent )
-    if (FRESH_DOWNLOAD)
-        # Define the variable to enable DOWNLOAD step
-        set( COLLECTION_REPO GIT_REPOSITORY ${git_url})
-    endif()
-
-    #checking if the path to required headers/libs is given by command or sets it's own
-    if(COLLECTOR_COLLECT_TOGETHER)
-        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS} )
-    else()
-        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${collection_name} )
-    endif()
-
-    if(NOT DEFINED ${collection_name}_DIR )
-        ExternalProject_Add( ${collection_name}
-            SOURCE_DIR          ${COLLECTOR_DIR}/${collection_name}
-            ${COLLECTION_REPO}
-            BINARY_DIR          ${PROJECT_BINARY_DIR}/${collection_name}
-            GIT_TAG             ${version_tag}
-            #CONFIGURE_COMMAND   ""
-            #BUILD_COMMAND       ""
-            #INSTALL_COMMAND     ""
-            #INSTALL_DIR         ${COLLECTOR_CMAKE_INSTALL_PREFIX} #don't know what it is used for
-            CMAKE_ARGS          ${CL_ARGS} -DCMAKE_INSTALL_PREFIX=${COLLECTOR_CMAKE_INSTALL_PREFIX}
-        )
-        add_dependencies(${dependent} ${collection_name})#wait for the download/configure/build/install of collection
-        target_include_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/include )#add path off include folder installed by current collection to dependent executable/library
-        target_link_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/lib)#add path off lib folder installed by current collection to dependent executable/library
-
-        #setting the path to the installed collecction, the folder containing includes and libs
-        SET (${collection_name}_DIR "${COLLECTOR_INSTALLS}/${collection_name}" )
 
         #propagate ${collection_name}_DIR to calling scope, ie the main cmakelist
         SET (${collection_name}_DIR ${${collection_name}_DIR} PARENT_SCOPE )
