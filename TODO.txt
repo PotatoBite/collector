@@ -1,8 +1,8 @@
 -check if the use of `collect_together()` and `collect_apart()` tampers the previously set COLLECTOR_COLLECT_TOGETHER.
 -set the path to compiled collections(in temp_workbench) depend in the templating used(unix, vs, etc)
--add ability to collect(), for collect collections from local storage
 -separate the collections installation, etc, from the main process of cmake(ie: like yarn install, yarn build)
 -make a list of collector ready projects, TESTED only
 -when changed some version of collection to download, if was previously compiled with, the build does not trigger the download step cause the cache thinks that target is already downloaded, so starts only an update step 
 -there is one bug, if the collections folder of project is deleted, the compilation cant find some collections, couse does not installs some of them
 -the optional variable for collect function, RETURN_TARGET, can hold anything, need to be setted to boolean
+-set ability to collect a repo that is not cmake collectable as source only
