@@ -6,3 +6,6 @@
 -there is one bug, if the collections folder of project is deleted, the compilation cant find some collections, couse does not installs some of them
 -the optional variable for collect function, RETURN_TARGET, can hold anything, need to be setted to boolean
 -set ability to collect a repo that is not cmake collectable as source only
+-need to handle/set/add to CMAKE_PREFIX_PATH for cmake to be able to find modules like SDL2.cmake in there(this one for example is installed manually to collections) ie (list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/cmake))
+-need a variable so can access the full path to currently installed collections, this is dependant on compiler and version ie(${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION})
+-also update doc to show how to use custom manually installed libraries and headers, like with SDL2
