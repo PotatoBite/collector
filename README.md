@@ -197,6 +197,11 @@ You can also get it when `collect_together` but all variables will point to the 
 
 The naming of the variable is: (`"_"`) + (the last string after `/` in the url) + (`"_DIR"`).
 
+### Using `find_package()`
+You can use cmake's `find_package()` as in any other project of course, but if the package is installed by one of the collected collection, this will not work, because the collections are compiled and installed on the project's build step, in general any package can be used without getting it with  `find_package()`, however this is a feature we want to implement cause is very handy, maybe with relatively new cmake's  `FetchContent`, but not there yet. 
+
+
+
 ## Future
 
 This module was conceived for internal use due to the lack of a: light, offline friendly, powerful, cmake friendly, not biased and standardized dependency manager for c/c++, and is in development, for more mature tools please refer to any of this awesome, but not suitable for us, tools:
