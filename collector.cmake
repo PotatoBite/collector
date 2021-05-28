@@ -1,6 +1,9 @@
 #Collector depends on ExternalProject, is actually a convenience wrapper of it, with some utilities
 include(ExternalProject)
 
+
+
+
 #getting global variables , like compiler, to pass it down to external projects
 get_cmake_property(vars CACHE_VARIABLES)
 message("\n") # this is for better understanding the output
@@ -13,11 +16,18 @@ foreach(var ${vars})
 endforeach()
 message("\n") # this is for better understanding the output
 
+
+
+
 #Set variable to let the user choose if redownload all collections, even if they exist in cache, when doing a first time configuration. 
 #If on, and do a really clean reconfigure of project(first time configuration), while offline, it will delete cache files and try to clone collection causing an error. 
 #We recommend not turning it on unless needed, just using diferent tag vesions of collections ius enough for basic versioning, and cache 
 #Actually it does not take into account if the downloaded folder is broken or not, i think.
 set(FRESH_DOWNLOAD off CACHE BOOL "Tries to download a fresh copy of all dependencies")
+
+
+
+
 
 #set the path to downloaded collections and installed collections
 if(NOT DEFINED COLLECTOR_DIR )#checking if was provided by a parent project, ie: avoiding having duplicated collections
@@ -35,8 +45,14 @@ if(NOT DEFINED COLLECTOR_INSTALLS )
     set (COLLECTOR_INSTALLS   ${PROJECT_SOURCE_DIR}/collections)
 endif()
 
+
+
+
+
 #Set variable for user choice of collections storage method
 set(COLLECTOR_COLLECT_TOGETHER on CACHE BOOL "if on, store installed dependencies on common folder,ie the root of \"COLLECTOR_INSTALLS\" folder. if off install each dependency on particular folder,ie \"COLLECTOR_INSTALLS/dependency\"") 
+
+
 
 
 
@@ -45,12 +61,11 @@ function(collect_together)
     set(COLLECTOR_COLLECT_TOGETHER on CACHE BOOL "if on, store installed dependencies on common folder,ie the root of \"COLLECTOR_INSTALLS\" folder. if off install each dependency on particular folder,ie \"COLLECTOR_INSTALLS/dependency\"" FORCE) 
 endfunction()
 
-
-
 #funcion to set up the ExternalProject_Add and needed folders of collector
 function(collect_apart)
     set(COLLECTOR_COLLECT_TOGETHER off CACHE BOOL "if on, store installed dependencies on common folder,ie the root of \"COLLECTOR_INSTALLS\" folder. if off install each dependency on particular folder,ie \"COLLECTOR_INSTALLS/dependency\"" FORCE) 
 endfunction()
+
 
 
 
@@ -95,11 +110,14 @@ function(collect git_url version_tag dependent)
         message("The collection ${collection_name} will be downloaded to folder:  ${collection_name_hash_appended} ")
     endif()
 
+    #removing blank spaces(at least tested with one) to avoid issues with path contoining blank spaces
+    string(REGEX REPLACE "[ \t\r\n]" "" CMAKE_GENERATOR_NO_SPACES ${CMAKE_GENERATOR})
+
     if(NOT DEFINED ${collection_name}_DIR )
         ExternalProject_Add( ${collection_name}
             SOURCE_DIR          ${COLLECTOR_DIR}/${collection_name_hash_appended}
             ${COLLECTION_REPO}
-            BINARY_DIR          ${COLLECTOR_DIR}/temp_workbench/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}-${CMAKE_GENERATOR}/${collection_name_hash_appended}
+            BINARY_DIR          "${COLLECTOR_DIR}/temp_workbench/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}-${CMAKE_GENERATOR_NO_SPACES}/${collection_name_hash_appended}"
             GIT_TAG             ${version_tag}
             #CONFIGURE_COMMAND   ""
             #BUILD_COMMAND       ""
