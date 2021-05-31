@@ -10,3 +10,4 @@
 -need a variable so can access the full path to currently installed collections, this is dependant on compiler and version ie(${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION})
 -also update doc to show how to use custom manually installed libraries and headers, like with SDL2
 -introduce tests in collections
+-add hack used in frittersFrontend for findpackage after a external_project_add
