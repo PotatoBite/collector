@@ -86,9 +86,9 @@ function(collect git_url version_tag dependent)
 
     #checking if the path to required headers/libs is given by command or sets it's own
     if(COLLECTOR_COLLECT_TOGETHER)
-        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION} )
+        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/ )
     else()
-        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${collection_name} )
+        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/${collection_name} )
     endif()
 
     #installs the collection to build folder of dependant, for development use mainly
@@ -117,7 +117,7 @@ function(collect git_url version_tag dependent)
         ExternalProject_Add( ${collection_name}
             SOURCE_DIR          ${COLLECTOR_DIR}/${collection_name_hash_appended}
             ${COLLECTION_REPO}
-            BINARY_DIR          "${COLLECTOR_DIR}/temp_workbench/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}-${CMAKE_GENERATOR_NO_SPACES}/${collection_name_hash_appended}"
+            BINARY_DIR          "${COLLECTOR_DIR}/temp_workbench/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}-${CMAKE_GENERATOR_NO_SPACES}/${collection_name_hash_appended}/${CMAKE_BUILD_TYPE}/"
             GIT_TAG             ${version_tag}
             #CONFIGURE_COMMAND   ""
             #BUILD_COMMAND       ""
