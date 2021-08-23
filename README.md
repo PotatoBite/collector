@@ -1,7 +1,7 @@
 # collector
 
 
-Mini dependency manager for cmake based projects, is currently just a commodity wrapper( with some automation) of cmake's `ExternalProject_Add`, but this will change in the future.
+Mini dependency manager for cmake based projects, is currently just a commodity wrapper( with some automation) of cmake's `ExternalProject_Add` and `FetchContent`, but this will change in the future.
 
 For total compatibility with all projects, the collections(the dependencies) are assumed to be cmake configurable, buildable, and installable in a folder structure like this:
 
@@ -37,10 +37,10 @@ You can just include the file `collector.cmake` in your project, but we strongly
 git submodule add https://github.com/PotatoBite/collector
 ```
 
-Collector right now depends on `ExternalProject`, so be sure your cmake supports it. That aside, in your project's `CMakeLists.txt`, you only need to include the `collector.cmake` AFTER the `project()` call:
+Collector right now depends on `ExternalProject` and `FetchContent`, so be sure your cmake supports them. That aside, in your project's `CMakeLists.txt`, you only need to include the `collector.cmake` AFTER the `project()` call:
 
 ```cmake
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.11.0)
 
 project(myapp VERSION 0.1.0)
 
@@ -48,6 +48,8 @@ include("collector/collector.cmake")#need to be after project()
 ```
 
 This is required because collector sets up some variables, (like the cache variable `FRESH_DOWNLOAD`), and need to get some other defined after the call to `project()`, (like `PROJECT_SOURCE_DIR` and `PROJECT_BINARY_DIR` ).
+
+
 
 ### Collect
 
@@ -94,6 +96,49 @@ target_link_libraries (myapp PRIVATE jsoncpp_static xgetopt )
 
 install(TARGETS myapp DESTINATION "bin")
 ```
+
+
+
+### Collect Source Only 
+
+To download source only dependencies use `collect_src()` function. It does uses cache but store downloaded collection in a slightly different convention, for example is not affected by the use of [COLLECTOR_COLLECT_TOGETHER](#COLLECTOR_COLLECT_TOGETHER).
+
+```cmake
+collect_src( <git_url> <version_tag> <dependent> )
+```
+
+This works pretty much like `collect()`(See [COLLECTOR_COLLECT_TOGETHER](#COLLECTOR_COLLECT_TOGETHER) for examples and better understanding), so use the same instructions, maybe main difference is implementation, and right now `collect()` is using cmake's `ExternalProject_Add`, and `collect_src()` is using `FetchContent_Declare` and `FetchContent_Populate`.
+
+This also does not trigger any build, just copies the repo verbatim.
+
+```cmake
+add_executable(myapp main.cpp)
+
+collect_src( "https://github.com/PotatoBite/xgetopt.git" "v1.0.0" myapp)
+```
+
+Ending with an structure in installed collections folder like this:
+```bash
+├───GNU-9.2.0
+│   └───RelWithDebInfo
+│       ├───bin
+│       ├───cmake
+│       ├───include
+│       │   ├───fritters
+│       │   ├───SDL2
+│       │   └───spdlog
+│       ├───lib
+│       └───SRCONLY
+│           ├───_glm.git
+│           ├───_xgetopt.git
+│           └───_googletest.git
+```
+
+
+
+Also, collector automatically adds the repos folders (the ones under `SRCONLY`) of each installed collection to the `include_directories ` of selected target. 
+
+
 
 ### Cache
 
@@ -162,34 +207,33 @@ It only affects the installation method of the collections, meaning all collecti
 
   ```bash
   .
-  └── GNU-9.3.0
-      ├── _jsoncpp
-      │   ├── include
-      │   └── lib
-      ├── _tuberosum_tools
-      │   └── include
-      └── _xgetopt
-          ├── include
-          └── lib
+  └── GNU-9.2.0
+  	└───RelWithDebInfo
+          ├── _jsoncpp
+          │   ├── include
+          │   └── lib
+          ├── _tuberosum_tools
+          │   └── include
+          └── _xgetopt
+              ├── include
+              └── lib
   ```
 
 - collected_installs folder when collect together:
 
   ```bash
   .
-  └── GNU-9.3.0
-      ├── include
-      └── lib
+  └── GNU-9.2.0
+  	└───RelWithDebInfo
+      	├── include
+      	└── lib
   
   ```
-
-  
 
 for the case of `collect_apart`, you can also get the path to installation folder of each collection by the exported variables, like :
 
 ```cmake
 collect( "https://github.com/PotatoBite/xgetopt" "v1.0.0" myapp)
-
 message( "path to collection xgetopt= ${_xgetopt_DIR}")
 ```
 
@@ -200,7 +244,16 @@ The naming of the variable is: (`"_"`) + (the last string after `/` in the url) 
 ### Using `find_package()`
 You can use cmake's `find_package()` as in any other project of course, but if the package is installed by one of the collected collection, this will not work, because the collections are compiled and installed on the project's build step, in general any package can be used without getting it with  `find_package()`, however this is a feature we want to implement cause is very handy, maybe with relatively new cmake's  `FetchContent`, but not there yet. 
 
+## Notes
 
+- As this is a work in progress, there is no consideration in file sizes, meaning all versions of collections are stored in cache as full repos, and compiled cache contains as many compilations as compilers, generators and configurations used(ie: one for msvc in Release mode, but also one for msvc in Debug, and also one for clang using unix makefiles  in MinSizeRelease, etc). Also the source only collections are copied as full repos to its corresponding folder:
+
+  ```cmake
+  ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/SRCONLY/${collection_name}
+  ```
+  
+  for example `./collections/GNU-9.2.0/RelWithDebInfo/SRCONLY/_glm.git`
+- As in general this is heavily WIP, any issue is recommended to clean build folder(delete entirely if possible) and reconfigure and build project from scratch, in extreme cases if not sure what's happening, delete compiled collections  [Cache](#Cache) folder, which is in `COLLECTOR_DIR/temp_workbench`.
 
 ## Future
 
@@ -210,6 +263,3 @@ This module was conceived for internal use due to the lack of a: light, offline 
 - [hunter](https://github.com/cpp-pm/hunter)
 - [build2 (toolchain)](https://www.build2.org/)
 - [conan](https://conan.io/)
-
-
-

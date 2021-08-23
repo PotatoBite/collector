@@ -1,6 +1,7 @@
 #Collector depends on ExternalProject, is actually a convenience wrapper of it, with some utilities
+#Also using FetchContent, obviously
 include(ExternalProject)
-
+include(FetchContent)
 
 
 
@@ -110,7 +111,7 @@ function(collect git_url version_tag dependent)
         message("The collection ${collection_name} will be downloaded to folder:  ${collection_name_hash_appended} ")
     endif()
 
-    #removing blank spaces(at least tested with one) to avoid issues with path contoining blank spaces
+    #removing blank spaces(at least tested with one) to avoid issues with path containing blank spaces, and creating variable with name to append to folder containing compiled collection
     string(REGEX REPLACE "[ \t\r\n]" "" CMAKE_GENERATOR_NO_SPACES ${CMAKE_GENERATOR})
 
     if(NOT DEFINED ${collection_name}_DIR )
@@ -131,6 +132,91 @@ function(collect git_url version_tag dependent)
 
         #setting the path to the installed collecction, the folder containing includes and libs
         SET (${collection_name}_DIR "${COLLECTOR_CMAKE_INSTALL_PREFIX}" )
+
+        #propagate ${collection_name}_DIR to calling scope, ie the main cmakelist
+        SET (${collection_name}_DIR ${${collection_name}_DIR} PARENT_SCOPE )
+
+    else()
+        message(STATUS "${collection_name}_DIR is DEFINED by something else")
+    endif()
+
+endfunction()
+
+
+
+
+
+
+#Function to setup external projects, source only, is copied verbatin 
+function(collect_src git_url version_tag dependent)
+    
+    #installs the collection to build folder of dependant, for development use mainly
+    #set(oneValueArgs RETURN_TARGET)
+    #cmake_parse_arguments(PARSE_ARGV 3 collection "${options}" "${oneValueArgs}" "${multiValueArgs}" )
+
+    #here we are calculating a name for the downloaded dependency
+    string(REGEX MATCH "[^/]+$" temp ${git_url})#getting the name based on the url
+    set(collection_name _${temp})#adding _ to the collection name for compatibility with other cmake variables, like lib names when linking
+
+    string(CONCAT temp ${git_url} ${version_tag})# computing has based on url, and tag
+    string(SHA1 temp ${temp})
+    string(CONCAT collection_name_hash_appended ${collection_name} "-" ${temp})#computing final name of downloaded collection
+
+    #installs the collection to build folder of dependant, for development use mainly
+    #need to set this as an extra path to install to, not override the custom path used for cache storage
+    #if(collection_RETURN_TARGET)
+    #    set (COLLECTOR_CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR} )
+    #    #install(TARGETS
+    #    #    ${collection_name}
+    #    #    DESTINATION ${PROJECT_BINARY_DIR} #el del parent_scope
+    #    #)
+    #endif()
+
+
+
+
+    #checking if the collection is already downloaded
+    if(EXISTS "${COLLECTOR_DIR}/${collection_name_hash_appended}" AND NOT FRESH_DOWNLOAD)
+        message("Using cache version of ${collection_name} in folder:  ${collection_name_hash_appended} ")
+    else()
+        message("The collection ${collection_name} is being downloaded to folder:  ${collection_name_hash_appended} ")
+        FetchContent_Declare(
+            ${collection_name}_cache
+            SOURCE_DIR        ${COLLECTOR_DIR}/${collection_name_hash_appended}
+            GIT_REPOSITORY              ${git_url}
+            GIT_TAG                     ${version_tag}
+        )
+        FetchContent_Populate(
+            ${collection_name}_cache
+        )
+    endif()
+
+    #removing blank spaces(at least tested with one) to avoid issues with path containing blank spaces, and creating variable with name to append to folder containing compiled collection
+    string(REGEX REPLACE "[ \t\r\n]" "" CMAKE_GENERATOR_NO_SPACES ${CMAKE_GENERATOR})
+
+    #"install" the source only collection to this indicated folder
+    set (COLLECTOR_SRCONLY_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/SRCONLY/${collection_name} )
+
+    if(NOT DEFINED ${collection_name}_DIR )
+        FetchContent_Declare(
+            ${collection_name}
+            SOURCE_DIR                  ${COLLECTOR_SRCONLY_CMAKE_INSTALL_PREFIX}
+            GIT_REPOSITORY              ${COLLECTOR_DIR}/${collection_name_hash_appended}
+            GIT_TAG                     ${version_tag}
+        )
+        FetchContent_Populate(
+            ${collection_name}    
+        )
+
+        
+        
+        #target_include_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/include )#add path of include folder installed by current collection to dependent executable/library
+        target_include_directories (${dependent} PRIVATE ${COLLECTOR_SRCONLY_CMAKE_INSTALL_PREFIX} )#add path of include folder installed by current collection to dependent executable/library
+
+        #target_link_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/lib)#add path off lib folder installed by current collection to dependent executable/library
+
+        #setting the path to the installed collecction, the folder containing includes and libs
+        SET (${collection_name}_DIR "${COLLECTOR_SRCONLY_CMAKE_INSTALL_PREFIX}" )
 
         #propagate ${collection_name}_DIR to calling scope, ie the main cmakelist
         SET (${collection_name}_DIR ${${collection_name}_DIR} PARENT_SCOPE )

@@ -1,14 +1,13 @@
 -check if the use of `collect_together()` and `collect_apart()` tampers the previously set COLLECTOR_COLLECT_TOGETHER.
--add ability to collect(), for collect collections from local storage UPDT:currently working with no extra steps
 -separate the collections installation, etc, from the main process of cmake(ie: like yarn install, yarn build)
 -make a list of collector ready projects, TESTED only
 -when changed some version of collection to download, if was previously compiled with, the build does not trigger the download step cause the cache thinks that target is already downloaded, so starts only an update step 
 -there is one bug, if the collections folder of project is deleted, the compilation cant find some collections, couse does not installs some of them
 -the optional variable for collect function, RETURN_TARGET, can hold anything, need to be set to only boolean or something like that
--set ability to collect a repo that is not cmake collectable as source only UPDT:do it with fetch content
 -need to handle/set/add to CMAKE_PREFIX_PATH for cmake to be able to find modules like SDL2.cmake in there(this one for example is installed manually to collections) ie (list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/cmake))
 -need a variable so can access the full path to currently installed collections, this is dependant on compiler and version ie(${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION})
 -also update doc to show how to use custom manually installed libraries and headers, like with SDL2
 -introduce tests in collections
 -add hack used in frittersFrontend for findpackage after a external_project_add
--when changed the type of build(ie release or debug), the compiled collections remain the same, this is very bad, probably need to separate the build folder, in temp_workbechn, into diferent folders for each build type(release debug).
+-recheck all of collect_src, store paths, behaviour when collect together and apart, naming conventions, the .git needed in repo name parameter when calling function
+-put in readme the use of return target in collect function
