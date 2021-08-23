@@ -138,6 +138,17 @@ Ending with an structure in installed collections folder like this:
 
 Also, collector automatically adds the repos folders (the ones under `SRCONLY`) of each installed collection to the `include_directories ` of selected target. 
 
+Right now there is no way to call `collect_src` before `add_executable` or `add_library` and use downloaded source files inside them, in future releases will be posible, but for now, yo can add downloaded source files to the target with cmake's `target_sources`, like this:
+
+```cmake
+target_sources(myapp
+  PRIVATE "xgetopt.c"
+  PRIVATE "googletest/src/gtest.cc"
+)
+```
+
+
+
 
 
 ### Cache

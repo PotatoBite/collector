@@ -11,3 +11,5 @@
 -add hack used in frittersFrontend for findpackage after a external_project_add
 -recheck all of collect_src, store paths, behaviour when collect together and apart, naming conventions, the .git needed in repo name parameter when calling function
 -put in readme the use of return target in collect function
+-make collect_src to add source files before add_executable in order to be able to use the downloaded source files, like some .cpp, or be able to add files to compile later with some command like target_sources(), maybe make optional the use of dependent parameter in functions colelct and collect_src
+-rethink how to use fetchContent_make_available to compile and install things
