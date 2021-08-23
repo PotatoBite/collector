@@ -255,6 +255,12 @@ You can use cmake's `find_package()` as in any other project of course, but if t
   for example `./collections/GNU-9.2.0/RelWithDebInfo/SRCONLY/_glm.git`
 - As in general this is heavily WIP, any issue is recommended to clean build folder(delete entirely if possible) and reconfigure and build project from scratch, in extreme cases if not sure what's happening, delete compiled collections  [Cache](#Cache) folder, which is in `COLLECTOR_DIR/temp_workbench`.
 
+- If present errors getting the collection with `collect_src`, maybe is due to the existence of desired collection cache folder(then it thinks is already downloaded), but empty, delete that folder and reconfigure, it should work, is a silly issue, but is not fixed yet.
+
+  (ie:  `_glm.git-de3fcf281e072987ecc7e2b04407eee428cf8e83 ` folder) 
+
+  
+
 ## Future
 
 This module was conceived for internal use due to the lack of a: light, offline friendly, powerful, cmake friendly, not biased and standardized dependency manager for c/c++, and is in development, for more mature tools please refer to any of this awesome, but not suitable for us, tools:
