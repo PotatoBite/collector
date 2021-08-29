@@ -4,6 +4,12 @@ include(ExternalProject)
 include(FetchContent)
 
 
+#Setting default build type, to fix issue with path calculated with no information provided in advance to cmake 
+if(CMAKE_BUILD_TYPE STREQUAL "")
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+
 
 #getting global variables , like compiler, to pass it down to external projects
 get_cmake_property(vars CACHE_VARIABLES)
