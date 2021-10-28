@@ -4,7 +4,7 @@ include(ExternalProject)
 include(FetchContent)
 
 
-#Setting default build type, to fix issue with path calculated with no information provided in advance to cmake 
+#Setting default build type, to fix issue with path calculated with no information provided in advance to cmake  NOT WORKING
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug)
 endif()
