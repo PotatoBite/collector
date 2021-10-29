@@ -232,9 +232,13 @@ endfunction()
 
 #Function to setup external projects and use with find package, its a wrapper to a nasty trick 
 #On msvc compiler, the first time the whole project builds, it will throw error, then the second time will be fine.
-function(collect_and_find package_name git_url version_tag dependant)
+macro(collect_and_find package_name git_url version_tag dependant)
+    set(package_name ${ARG0})
+    set(git_url ${ARG1})
+    set(version_tag ${ARG2})
+    set(dependant ${ARG3})
     
-set(collection_name "temp collection name")
+    set(collection_name "temp collection name")
     string(REGEX MATCH "[^/]+$" collection_name ${git_url})#getting the name based on the url
 
     list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_BASE_INSTALL_PREFIX}/cmake)
@@ -266,4 +270,4 @@ set(collection_name "temp collection name")
     endif()
     add_dependencies( ${dependant} Rescan)
 
-endfunction()
+endmacro()

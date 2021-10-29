@@ -98,7 +98,7 @@ install(TARGETS myapp DESTINATION "bin")
 ```
 
 ### Collect and find
-You can use cmake's `find_package()` as in any other project of course, but if the package is installed by one of the collected collection, this will not work, because the collections are compiled and installed on the project's build step, in general any package can be used without getting it with  `find_package()`, however this is a handy feature, so there is a hacky function for that:
+You can use cmake's `find_package()` as in any other project of course, but if the package is installed by one of the collected collection, this will not work, because the collections are compiled and installed on the project's build step, in general any package can be used without getting it with  `find_package()`, however this is a handy feature, so there is a hacky macro for that:
 
 ```cmake
 collect_and_find( <package_name> <git_url> <version_tag> <dependant> )
