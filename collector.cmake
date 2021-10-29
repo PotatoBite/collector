@@ -4,7 +4,7 @@ include(ExternalProject)
 include(FetchContent)
 
 
-#Setting default build type, to fix issue with path calculated with no information provided in advance to cmake 
+#Setting default build type, to fix issue with path calculated with no information provided in advance to cmake  NOT WORKING
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -22,13 +22,6 @@ foreach(var ${vars})
     endif()
 endforeach()
 message("\n") # this is for better understanding the output
-
-
-function(append_var_to_cmake_args var)
-    list(APPEND EXTRA_FLAGS "-D${var}=${${var}}") 
-    #string(APPEND EXTRA_FLAGS "-D${var}=${${var}}")
-    set(EXTRA_FLAGS ${EXTRA_FLAGS} PARENT_SCOPE )
-endfunction(append_var_to_cmake_args)
 
 
 
@@ -58,13 +51,13 @@ if(NOT DEFINED COLLECTOR_INSTALLS )
     set (COLLECTOR_INSTALLS   ${PROJECT_SOURCE_DIR}/collections)
 endif()
 
+set(COLLECTOR_BASE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/ )
 
 
 
 
 #Set variable for user choice of collections storage method
 set(COLLECTOR_COLLECT_TOGETHER on CACHE BOOL "if on, store installed dependencies on common folder,ie the root of \"COLLECTOR_INSTALLS\" folder. if off install each dependency on particular folder,ie \"COLLECTOR_INSTALLS/dependency\"") 
-
 
 
 
@@ -79,6 +72,12 @@ function(collect_apart)
     set(COLLECTOR_COLLECT_TOGETHER off CACHE BOOL "if on, store installed dependencies on common folder,ie the root of \"COLLECTOR_INSTALLS\" folder. if off install each dependency on particular folder,ie \"COLLECTOR_INSTALLS/dependency\"" FORCE) 
 endfunction()
 
+#forward some variable as command line arg to all runs of cmake in collections
+function(append_var_to_cmake_args var)
+    list(APPEND EXTRA_FLAGS "-D${var}=${${var}}") 
+    #string(APPEND EXTRA_FLAGS "-D${var}=${${var}}")
+    set(EXTRA_FLAGS ${EXTRA_FLAGS} PARENT_SCOPE )
+endfunction(append_var_to_cmake_args)
 
 
 
@@ -99,9 +98,9 @@ function(collect git_url version_tag dependant)
 
     #checking if the path to required headers/libs is given by command or sets it's own
     if(COLLECTOR_COLLECT_TOGETHER)
-        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/ )
+        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_BASE_INSTALL_PREFIX} )
     else()
-        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/${collection_name} )
+        set (COLLECTOR_CMAKE_INSTALL_PREFIX ${COLLECTOR_BASE_INSTALL_PREFIX}/${collection_name} )
     endif()
 
     #installs the collection to build folder of dependant, for development use mainly
@@ -197,7 +196,7 @@ function(collect_src git_url version_tag dependant)
     string(REGEX REPLACE "[ \t\r\n]" "" CMAKE_GENERATOR_NO_SPACES ${CMAKE_GENERATOR})
 
     #"install" the source only collection to this indicated folder
-    set (COLLECTOR_SRCONLY_CMAKE_INSTALL_PREFIX ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/SRCONLY/${collection_name} )
+    set (COLLECTOR_SRCONLY_CMAKE_INSTALL_PREFIX ${COLLECTOR_BASE_INSTALL_PREFIX}/SRCONLY/${collection_name} )
 
     if(NOT DEFINED ${collection_name}_DIR )
         FetchContent_Declare(
@@ -234,9 +233,14 @@ endfunction()
 #Function to setup external projects and use with find package, its a wrapper to a nasty trick 
 #On msvc compiler, the first time the whole project builds, it will throw error, then the second time will be fine.
 function(collect_and_find package_name git_url version_tag dependant)
+    
+set(collection_name "temp collection name")
+    string(REGEX MATCH "[^/]+$" collection_name ${git_url})#getting the name based on the url
 
-    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/cmake)
-    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/lib/cmake/${package_name})
+    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_BASE_INSTALL_PREFIX}/cmake)
+    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_BASE_INSTALL_PREFIX}/${collection_name}/cmake)#for collect apart
+    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_BASE_INSTALL_PREFIX}/lib/cmake/${package_name})
+    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_BASE_INSTALL_PREFIX}/${collection_name}/lib/cmake/${package_name})#for collect apart
 
 
     find_package( ${package_name} )#need to check this after the collection are installed, at least in this moment, if not used this way linker throws some errors
@@ -246,8 +250,6 @@ function(collect_and_find package_name git_url version_tag dependant)
         #will update cmakecache/project files on first build
         #so you may have to reload project after first build
         message( ${package_name} " not found")
-        set(collection_name "temp collection name")
-        string(REGEX MATCH "[^/]+$" collection_name ${git_url})#getting the name based on the url
         
         if (TARGET Rescan)
         else()
@@ -256,7 +258,11 @@ function(collect_and_find package_name git_url version_tag dependant)
     else()
         #Rescan becomes a dummy target after first build
         #this prevents cmake from rebuilding cache/projects on subsequent builds
-        add_custom_target(Rescan)
+        if (TARGET Rescan)
+        else()
+            add_custom_target(Rescan)
+        endif()
+        #add_custom_target(Rescan)
     endif()
     add_dependencies( ${dependant} Rescan)
 

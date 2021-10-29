@@ -97,6 +97,36 @@ target_link_libraries (myapp PRIVATE jsoncpp_static xgetopt )
 install(TARGETS myapp DESTINATION "bin")
 ```
 
+### Collect and find
+You can use cmake's `find_package()` as in any other project of course, but if the package is installed by one of the collected collection, this will not work, because the collections are compiled and installed on the project's build step, in general any package can be used without getting it with  `find_package()`, however this is a handy feature, so there is a hacky function for that:
+
+```cmake
+collect_and_find( <package_name> <git_url> <version_tag> <dependant> )
+```
+
+
+
+This is an example using SDL2 library:
+
+```cmake
+collect_and_find( SDL2 "https://github.com/libsdl-org/SDL" "release-2.0.14" myapp )
+if(${SDL2_FOUND})
+	target_link_libraries (myapp PRIVATE SDL2::SDL2main SDL2::SDL2-static )
+endif()
+```
+
+ That normally( without collector) would be:
+
+```cmake
+find_package(SDL2)
+if(${SDL2_FOUND})
+	target_link_libraries (myapp PRIVATE SDL2::SDL2main SDL2::SDL2-static )
+endif()
+```
+
+So this shows pretty much the basic stuff, although, the app should compile easily with clang, gcc or mingw, but with msvc if the SDL2 package is missing, the first build installs it along other dependencies and the build needs to be triggered a second time for the main app to be able to find deps and link correctly, cause the first try fails. All this is because some hacky workaround with a `Rescan` custom target .
+
+Again it is really basic, and not supporting things like `find_package(SDL2 REQUIRED) `etc.(not needed though) , but works ok with almost any case like described.
 
 
 ### Collect Source Only 
@@ -107,7 +137,7 @@ To download source only dependencies use `collect_src()` function. It does uses 
 collect_src( <git_url> <version_tag> <dependant> )
 ```
 
-This works pretty much like `collect()`(See [COLLECTOR_COLLECT_TOGETHER](#COLLECTOR_COLLECT_TOGETHER) for examples and better understanding), so use the same instructions, maybe main difference is implementation, and right now `collect()` is using cmake's `ExternalProject_Add`, and `collect_src()` is using `FetchContent_Declare` and `FetchContent_Populate`.
+This works pretty much like `collect()`(See [Collect](#Collect) for examples and better understanding), so use the same instructions, maybe main difference is implementation, and right now `collect()` is using cmake's `ExternalProject_Add`, and `collect_src()` is using `FetchContent_Declare` and `FetchContent_Populate`.
 
 This also does not trigger any build, just copies the repo verbatim.
 
@@ -159,7 +189,25 @@ If `COLLECTOR_DIR` variable is not defined manually, collector will use an envir
 
 If none of the above options, collector fallbacks to create a directory(`collected_deps`) on project root directory(the cmake variable `PROJECT_SOURCE_DIR`).
 
+### Activate options on collections
 
+Because some collections need some tuning to use properly, there is a function to forward custom vars as command line arguments to the invocation of cmake steps on each collection:
+
+```cmake
+append_var_to_cmake_args(<CMAKE_VAR>)
+```
+
+Example using Glad library:
+
+```cmake
+set(GLAD_INSTALL ON)
+set(GLAD_NO_LOADER ON)
+append_var_to_cmake_args(GLAD_INSTALL)
+append_var_to_cmake_args(GLAD_NO_LOADER)
+collect( "https://github.com/Dav1dde/glad" "v0.1.34" myapp )
+```
+
+This however sends all vars  passed to `append_var_to_cmake_args()` to each collection, meaning in some cases can be unintended behaviors due to clashes between vars names in different collections.
 
 ## Advanced
 
@@ -252,24 +300,25 @@ You can also get it when `collect_together` but all variables will point to the 
 
 The naming of the variable is: (`"_"`) + (the last string after `/` in the url) + (`"_DIR"`).
 
-### Using `find_package()`
-You can use cmake's `find_package()` as in any other project of course, but if the package is installed by one of the collected collection, this will not work, because the collections are compiled and installed on the project's build step, in general any package can be used without getting it with  `find_package()`, however this is a feature we want to implement cause is very handy, maybe with relatively new cmake's  `FetchContent`, but not there yet. 
 
 ## Notes
 
-- As this is a work in progress, there is no consideration in file sizes, meaning all versions of collections are stored in cache as full repos, and compiled cache contains as many compilations as compilers, generators and configurations used(ie: one for msvc in Release mode, but also one for msvc in Debug, and also one for clang using unix makefiles  in MinSizeRelease, etc). Also the source only collections are copied as full repos to its corresponding folder:
+- As this is a work in progress, there is no consideration in file sizes, meaning all versions of collections are stored in cache as full repos, and compiled cache contains as many compilations as compilers, generators and configurations used(i.e: one for msvc in Release mode, but also one for msvc in Debug, and also one for clang using unix makefiles  in MinSizeRelease, etc.). Also the source only collections are copied as full repos to its corresponding folder:
 
   ```cmake
   ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/SRCONLY/${collection_name}
   ```
   
   for example `./collections/GNU-9.2.0/RelWithDebInfo/SRCONLY/_glm.git`
-- As in general this is heavily WIP, any issue is recommended to clean build folder(delete entirely if possible) and reconfigure and build project from scratch, in extreme cases if not sure what's happening, delete compiled collections  [Cache](#Cache) folder, which is in `COLLECTOR_DIR/temp_workbench`.
+  
+- As in general this is heavily WIP, any issue is recommended to clean build folder(delete entirely if possible) and reconfigure and build project from scratch, in extreme cases if not sure what's happening, delete compiled collections  [Cache](#Cache) folder, which is in `COLLECTOR_DIR/temp_workbench` or `COLLECTOR_ROOT_DIR/temp_workbench`.
 
 - If present errors getting the collection with `collect_src`, maybe is due to the existence of desired collection cache folder(then it thinks is already downloaded), but empty, delete that folder and reconfigure, it should work, is a silly issue, but is not fixed yet.
 
-  (ie:  `_glm.git-de3fcf281e072987ecc7e2b04407eee428cf8e83 ` folder) 
+  (i.e:  `_glm.git-de3fcf281e072987ecc7e2b04407eee428cf8e83 ` folder) 
 
+- Because `collect()` is using cmake's  `ExternalProject_Add`, the git url in argument can be some path to local git repository, a little handy feature not widely known by newbies, like me. 
+  
   
 
 ## Future
@@ -280,3 +329,23 @@ This module was conceived for internal use due to the lack of a: light, offline 
 - [hunter](https://github.com/cpp-pm/hunter)
 - [build2 (toolchain)](https://www.build2.org/)
 - [conan](https://conan.io/)
+
+## List of tested collections
+
+This is **NOT** an extensive list, just because **ANY** repository that is cmake configurable, buildable and installable, can be collected and used just like that, thanks to the awesomeness of cmake. This is however a list of some collections previously used successfully, feel free to PR and extend list:
+
+| Collection      | git_url                                        | version_tag    | Notes                                                        |
+| --------------- | ---------------------------------------------- | -------------- | ------------------------------------------------------------ |
+| Sol2            | https://github.com/ThePhD/sol2                 | v3.2.2         |                                                              |
+| spdlog          | https://github.com/gabime/spdlog               | v1.8.5         |                                                              |
+| Fritters        | https://github.com/PotatoBite/fritters         | v0.0.15        |                                                              |
+| Lua             | https://github.com/daroxs95/Lua                | v5.4.2-install | Cmake based build for lua, fork of [this](https://github.com/walterschell/Lua) with added install step |
+| SDL2            | https://github.com/libsdl-org/SDL              | release-2.0.14 | Recommend to use like `collect_and_find(SDL2 <...>)`         |
+| Curl            | https://github.com/curl/curl                   | curl-7_79_1    | Recommend to use like `collect_and_find(CURL<...>)`, but not extensively tested |
+| Glad            | https://github.com/Dav1dde/glad                | v0.1.34        |                                                              |
+| jsoncpp         | https://github.com/open-source-parsers/jsoncpp | 1.9.4          |                                                              |
+| Tuberosum Tools | https://github.com/PotatoBite/tuberosum_tools  | v1.0.3         | For now is a private repo, is here for future public release |
+| Rpt reader      | https://github.com/PotatoBite/rpt_reader       | v0.0.1         | For now is a private repo, is here for future public release |
+| Civ             | https://github.com/PotatoBite/civ              | v1.0.4         | For now is a private repo, is here for future public release |
+| xgetopt         | https://github.com/PotatoBite/xgetopt          | v1.0.0         | Cmake based build for xgetopt, fork of [this](https://github.com/matthklo/xgetopt) |
+

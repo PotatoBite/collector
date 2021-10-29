@@ -1,6 +1,5 @@
 -check if the use of `collect_together()` and `collect_apart()` tampers the previously set COLLECTOR_COLLECT_TOGETHER.
 -separate the collections installation, etc, from the main process of cmake(ie: like yarn install, yarn build)
--make a list of collector ready projects, TESTED only
 -when changed some version of collection to download, if was previously compiled with, the build does not trigger the download step cause the cache thinks that target is already downloaded, so starts only an update step 
 -there is one bug, if the collections folder of project is deleted, the compilation cant find some collections, cause does not install some of them
 -the optional variable for collect function, RETURN_TARGET, can hold anything, need to be set to only boolean or something like that
@@ -23,5 +22,6 @@
 			add_subdirectory( ${_Lua.git_DIR} )
 		```
 setting the variable FRESH_DOWNLOAD from cmake's cache, does not work
--have some issue resolving CL_ARGS, when calling external project add: if some flag is list appended to CL_ARGS, like -DGLAD_INSTALL=ON, the collection does not receive that flag, but in other variable put after CL_ARGS on External_project_Add's ARGS, that indeed works ok, maybe related to the compiler paths in CL_ARGS that are outside ""
+-have some issue resolving CL_ARGS, when calling external project add: if some flag is list appended to CL_ARGS, like -DGLAD_INSTALL=ON, the collection does not receive that flag, but in other variable put after CL_ARGS on External_project_Add's ARGS, that indeed works ok, maybe related to the compiler paths in CL_ARGS that are outside "", meaning that `Compiler selection and options forwarding` could be working wrong.
 -add to doc the new functions collect_and_find() and append_var_to_cmake_args()
+-
