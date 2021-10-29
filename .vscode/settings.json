@@ -1,0 +1,16 @@
+{
+    "spellright.language": [
+        "en"
+    ],
+    "spellright.documentTypes": [
+        "markdown",
+        "latex",
+        "plaintext",
+        "cmake"
+    ],
+    "spellright.parserByClass": {
+        "cmake": {
+            "parser": "plain"
+        }
+    }
+}

@@ -56,10 +56,10 @@ This is required because collector sets up some variables, (like the cache varia
 The core of collector is the `collect()` function, it does configure all things needed to download, update, configure, build and install each collection.
 
 ```cmake
-collect( <git_url> <version_tag> <dependent> )
+collect( <git_url> <version_tag> <dependant> )
 ```
 
-It accepts the url of a git repository from where it will clone the desired collection, a tag name, that tells which commit will be used, and the `dependent`, which is the target that will depend on the collection(Of course because there is no way of knowing what target cmake is working on, it must be specified this way, resulting in the call must to be done after `add_executable()` or `add_library()`), for example:
+It accepts the url of a git repository from where it will clone the desired collection, a tag name, that tells which commit will be used, and the `dependant`, which is the target that will depend on the collection(Of course because there is no way of knowing what target cmake is working on, it must be specified this way, resulting in the call must to be done after `add_executable()` or `add_library()`), for example:
 
 ```cmake
 add_executable(myapp main.cpp)
@@ -104,7 +104,7 @@ install(TARGETS myapp DESTINATION "bin")
 To download source only dependencies use `collect_src()` function. It does uses cache but store downloaded collection in a slightly different convention, for example is not affected by the use of [COLLECTOR_COLLECT_TOGETHER](#COLLECTOR_COLLECT_TOGETHER).
 
 ```cmake
-collect_src( <git_url> <version_tag> <dependent> )
+collect_src( <git_url> <version_tag> <dependant> )
 ```
 
 This works pretty much like `collect()`(See [COLLECTOR_COLLECT_TOGETHER](#COLLECTOR_COLLECT_TOGETHER) for examples and better understanding), so use the same instructions, maybe main difference is implementation, and right now `collect()` is using cmake's `ExternalProject_Add`, and `collect_src()` is using `FetchContent_Declare` and `FetchContent_Populate`.
@@ -138,7 +138,7 @@ Ending with an structure in installed collections folder like this:
 
 Also, collector automatically adds the repos folders (the ones under `SRCONLY`) of each installed collection to the `include_directories ` of selected target. 
 
-Right now there is no way to call `collect_src` before `add_executable` or `add_library` and use downloaded source files inside them, in future releases will be posible, but for now, yo can add downloaded source files to the target with cmake's `target_sources`, like this:
+Right now there is no way to call `collect_src` before `add_executable` or `add_library` and use downloaded source files inside them, in future releases will be possible, but for now, yo can add downloaded source files to the target with cmake's `target_sources`, like this:
 
 ```cmake
 target_sources(myapp

@@ -24,11 +24,17 @@ endforeach()
 message("\n") # this is for better understanding the output
 
 
+function(append_var_to_cmake_args var)
+    list(APPEND EXTRA_FLAGS "-D${var}=${${var}}") 
+    #string(APPEND EXTRA_FLAGS "-D${var}=${${var}}")
+    set(EXTRA_FLAGS ${EXTRA_FLAGS} PARENT_SCOPE )
+endfunction(append_var_to_cmake_args)
+
 
 
 #Set variable to let the user choose if redownload all collections, even if they exist in cache, when doing a first time configuration. 
 #If on, and do a really clean reconfigure of project(first time configuration), while offline, it will delete cache files and try to clone collection causing an error. 
-#We recommend not turning it on unless needed, just using diferent tag vesions of collections ius enough for basic versioning, and cache 
+#We recommend not turning it on unless needed, just using different tag versions of collections is enough for basic versioning, and cache 
 #Actually it does not take into account if the downloaded folder is broken or not, i think.
 set(FRESH_DOWNLOAD off CACHE BOOL "Tries to download a fresh copy of all dependencies")
 
@@ -77,7 +83,7 @@ endfunction()
 
 
 #Function to setup external projects
-function(collect git_url version_tag dependent)
+function(collect git_url version_tag dependant)
     
     #installs the collection to build folder of dependant, for development use mainly
     set(oneValueArgs RETURN_TARGET)
@@ -130,13 +136,14 @@ function(collect git_url version_tag dependent)
             #BUILD_COMMAND       ""
             #INSTALL_COMMAND     ""
             #INSTALL_DIR         ${COLLECTOR_CMAKE_INSTALL_PREFIX} #don't know what it is used for
-            CMAKE_ARGS          ${CL_ARGS} -DCMAKE_INSTALL_PREFIX=${COLLECTOR_CMAKE_INSTALL_PREFIX} -DCOLLECTOR_DIR=${COLLECTOR_DIR} -DCOLLECTOR_INSTALLS=${COLLECTOR_INSTALLS}
+            LOG_CONFIGURE       ON
+            CMAKE_ARGS          ${CL_ARGS} ${EXTRA_FLAGS} -DCMAKE_INSTALL_PREFIX=${COLLECTOR_CMAKE_INSTALL_PREFIX} -DCOLLECTOR_DIR=${COLLECTOR_DIR} -DCOLLECTOR_INSTALLS=${COLLECTOR_INSTALLS}
         )
-        add_dependencies(${dependent} ${collection_name})#wait for the download/configure/build/install of collection
-        target_include_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/include )#add path of include folder installed by current collection to dependent executable/library
-        target_link_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/lib)#add path off lib folder installed by current collection to dependent executable/library
+        add_dependencies(${dependant} ${collection_name})#wait for the download/configure/build/install of collection
+        target_include_directories (${dependant} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/include )#add path of include folder installed by current collection to dependant executable/library
+        target_link_directories (${dependant} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/lib)#add path off lib folder installed by current collection to dependant executable/library
 
-        #setting the path to the installed collecction, the folder containing includes and libs
+        #setting the path to the installed collection, the folder containing includes and libs
         SET (${collection_name}_DIR "${COLLECTOR_CMAKE_INSTALL_PREFIX}" )
 
         #propagate ${collection_name}_DIR to calling scope, ie the main cmakelist
@@ -153,8 +160,8 @@ endfunction()
 
 
 
-#Function to setup external projects, source only, is copied verbatin 
-function(collect_src git_url version_tag dependent)
+#Function to setup external projects, source only, is copied verbatim 
+function(collect_src git_url version_tag dependant)
     
     #installs the collection to build folder of dependant, for development use mainly
     #set(oneValueArgs RETURN_TARGET)
@@ -167,17 +174,6 @@ function(collect_src git_url version_tag dependent)
     string(CONCAT temp ${git_url} ${version_tag})# computing has based on url, and tag
     string(SHA1 temp ${temp})
     string(CONCAT collection_name_hash_appended ${collection_name} "-" ${temp})#computing final name of downloaded collection
-
-    #installs the collection to build folder of dependant, for development use mainly
-    #need to set this as an extra path to install to, not override the custom path used for cache storage
-    #if(collection_RETURN_TARGET)
-    #    set (COLLECTOR_CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR} )
-    #    #install(TARGETS
-    #    #    ${collection_name}
-    #    #    DESTINATION ${PROJECT_BINARY_DIR} #el del parent_scope
-    #    #)
-    #endif()
-
 
 
 
@@ -216,12 +212,12 @@ function(collect_src git_url version_tag dependent)
 
         
         
-        #target_include_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/include )#add path of include folder installed by current collection to dependent executable/library
-        target_include_directories (${dependent} PRIVATE ${COLLECTOR_SRCONLY_CMAKE_INSTALL_PREFIX} )#add path of include folder installed by current collection to dependent executable/library
+        #target_include_directories (${dependant} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/include )#add path of include folder installed by current collection to dependant executable/library
+        target_include_directories (${dependant} PRIVATE ${COLLECTOR_SRCONLY_CMAKE_INSTALL_PREFIX} )#add path of include folder installed by current collection to dependant executable/library
 
-        #target_link_directories (${dependent} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/lib)#add path off lib folder installed by current collection to dependent executable/library
+        #target_link_directories (${dependant} PRIVATE ${COLLECTOR_CMAKE_INSTALL_PREFIX}/lib)#add path off lib folder installed by current collection to dependant executable/library
 
-        #setting the path to the installed collecction, the folder containing includes and libs
+        #setting the path to the installed collection, the folder containing includes and libs
         SET (${collection_name}_DIR "${COLLECTOR_SRCONLY_CMAKE_INSTALL_PREFIX}" )
 
         #propagate ${collection_name}_DIR to calling scope, ie the main cmakelist
@@ -230,5 +226,38 @@ function(collect_src git_url version_tag dependent)
     else()
         message(STATUS "${collection_name}_DIR is DEFINED by something else")
     endif()
+
+endfunction()
+
+
+
+#Function to setup external projects and use with find package, its a wrapper to a nasty trick 
+#On msvc compiler, the first time the whole project builds, it will throw error, then the second time will be fine.
+function(collect_and_find package_name git_url version_tag dependant)
+
+    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/cmake)
+    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/${CMAKE_BUILD_TYPE}/lib/cmake/${package_name})
+
+
+    find_package( ${package_name} )#need to check this after the collection are installed, at least in this moment, if not used this way linker throws some errors
+    if( NOT ${package_name}_FOUND )
+        collect( ${git_url} ${version_tag} ${dependant} )
+        #rerun cmake in initial build
+        #will update cmakecache/project files on first build
+        #so you may have to reload project after first build
+        message( ${package_name} " not found")
+        set(collection_name "temp collection name")
+        string(REGEX MATCH "[^/]+$" collection_name ${git_url})#getting the name based on the url
+        
+        if (TARGET Rescan)
+        else()
+            add_custom_target(Rescan ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS _${collection_name} )
+        endif()
+    else()
+        #Rescan becomes a dummy target after first build
+        #this prevents cmake from rebuilding cache/projects on subsequent builds
+        add_custom_target(Rescan)
+    endif()
+    add_dependencies( ${dependant} Rescan)
 
 endfunction()
