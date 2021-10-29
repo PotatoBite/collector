@@ -257,8 +257,10 @@ macro(collect_and_find package_name git_url version_tag dependant)
         
         if (TARGET Rescan)
         else()
-            add_custom_target(Rescan ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS _${collection_name} )
+            add_custom_target(Rescan ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} )
         endif()
+        add_dependencies(Rescan _${collection_name})#wait for the download/configure/build/install of collection
+
     else()
         #Rescan becomes a dummy target after first build
         #this prevents cmake from rebuilding cache/projects on subsequent builds
