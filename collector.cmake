@@ -244,6 +244,7 @@ macro(collect_and_find package_name git_url version_tag dependant)
     list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_BASE_INSTALL_PREFIX}/cmake)
     list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_BASE_INSTALL_PREFIX}/${collection_name}/cmake)#for collect apart
     list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_BASE_INSTALL_PREFIX}/lib/cmake/${package_name})
+    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_BASE_INSTALL_PREFIX}/lib/cmake/${package_name}-${version_tag})
     list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_BASE_INSTALL_PREFIX}/${collection_name}/lib/cmake/${package_name})#for collect apart
 
 
