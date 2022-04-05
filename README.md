@@ -1,3 +1,7 @@
+This project is closed due a design flaw that will prevent us to achieve our goals( i.e: hard to manage tangled dependencies ) and we though could be easily fixed but ultimately decided to start a fresh project with a better design and probably independency of cmake. 
+
+Use only in small non very extendible projects or for fast prototyping. 
+
 # collector
 
 
