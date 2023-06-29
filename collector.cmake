@@ -30,6 +30,8 @@ message("\n") # this is for better understanding the output
 #We recommend not turning it on unless needed, just using different tag versions of collections is enough for basic versioning, and cache 
 #Actually it does not take into account if the downloaded folder is broken or not, i think.
 set(FRESH_DOWNLOAD off CACHE BOOL "Tries to download a fresh copy of all dependencies")
+set(USE_SHALLOW_CLONE on CACHE BOOL "Clones git dependencies using --depth 0")
+set(SHOW_GIT_CLONE_PROGRESS on CACHE BOOL "Shows progress of dependency cloning")
 
 
 
@@ -131,6 +133,8 @@ function(collect git_url version_tag dependant)
             ${COLLECTION_REPO}
             BINARY_DIR          "${COLLECTOR_DIR}/temp_workbench/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}-${CMAKE_GENERATOR_NO_SPACES}/${collection_name_hash_appended}/${CMAKE_BUILD_TYPE}/"
             GIT_TAG             ${version_tag}
+            GIT_SHALLOW         ${USE_SHALLOW_CLONE}
+            GIT_PROGRESS        ${SHOW_GIT_CLONE_PROGRESS}
             #CONFIGURE_COMMAND   ""
             #BUILD_COMMAND       ""
             #INSTALL_COMMAND     ""
@@ -186,6 +190,8 @@ function(collect_src git_url version_tag dependant)
             SOURCE_DIR        ${COLLECTOR_DIR}/${collection_name_hash_appended}
             GIT_REPOSITORY              ${git_url}
             GIT_TAG                     ${version_tag}
+            GIT_SHALLOW         ${USE_SHALLOW_CLONE}
+            GIT_PROGRESS        ${SHOW_GIT_CLONE_PROGRESS}
         )
         FetchContent_Populate(
             ${collection_name}_cache
