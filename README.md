@@ -1,3 +1,5 @@
+![collector logo](./public/logo.svg)
+
 🧱 This project was closed due a design flaw that will prevent us to achieve our goals( i.e: hard to manage tangled dependencies ) and we though could be easily fixed but ultimately decided to start a fresh project with a better design and probably independency of cmake.
 
 ⚠️ Reopened due to missing alternatives to our liking, the design flaws still exists.
